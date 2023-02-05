@@ -1,5 +1,5 @@
 use crate::vk;
-use crate::{Device, Instance};
+use crate::{Device, Entry, Instance};
 use std::ffi::CStr;
 use std::mem;
 
@@ -10,10 +10,11 @@ pub struct VideoDecodeQueue {
 }
 
 impl VideoDecodeQueue {
-    pub fn new(instance: &Instance, device: &Device) -> Self {
+    pub fn new(entry: &Entry, instance: &Instance, device: &Device) -> Self {
         let handle = device.handle();
         let fp = vk::KhrVideoDecodeQueueFn::load(|name| unsafe {
-            mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
+            mem::transmute(entry.get_instance_proc_addr(instance.handle(), name.as_ptr()))
+            //mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
         });
         Self { handle, fp }
     }
