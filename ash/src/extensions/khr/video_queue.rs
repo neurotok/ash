@@ -32,7 +32,7 @@ impl VideoQueue {
             .result()
     }
 
-    /// Retrieve the number of elements to pass to [`get_physical_device_video_format_properties_khr()`][Self::get_physical_device_video_format_properties_khr()]
+    /// Retrieve the number of elements to pass to [`get_physical_device_video_format_properties()`][Self::get_physical_device_video_format_properties()]
     #[inline]
     pub unsafe fn get_physical_device_video_format_properties_len(
         &self,
@@ -98,6 +98,23 @@ impl VideoQueue {
             video_session,
             allocation_callbacks.as_raw_ptr(),
         );
+    }
+
+    
+    /// Retrieve the number of elements to pass to [`get_video_session_memory_requirements()`][Self::get_video_session_memory_requirements()]
+    #[inline]
+    pub unsafe fn get_video_session_memory_requirements_len(
+        &self,
+        video_session: vk::VideoSessionKHR,
+    ) -> usize {
+        let mut properties_count = 0;
+        let _r = (self.fp.get_video_session_memory_requirements_khr)(
+            self.handle,
+            video_session,
+            &mut properties_count,
+            ptr::null_mut(),
+        );
+        properties_count as usize
     }
 
     /// <https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkGetVideoSessionMemoryRequirementsKHR.html>
