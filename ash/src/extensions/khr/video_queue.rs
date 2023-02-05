@@ -1,25 +1,26 @@
 use crate::prelude::*;
 use crate::vk;
 use crate::RawPtr;
-use crate::{Device, Entry, Instance};
+use crate::{Entry, Instance};
 use std::ffi::CStr;
 use std::mem;
 use std::ptr;
 
 #[derive(Clone)]
 pub struct VideoQueue {
-    handle: vk::Device,
+    handle: vk::Instance,
     fp: vk::KhrVideoQueueFn,
 }
 
 impl VideoQueue {
-    pub fn new(entry: &Entry, instance: &Instance, device: &Device) -> Self {
-        let handle = device.handle();
+    pub fn new(entry: &Entry, instance: &Instance) -> Self {
+        let handle = instance.handle();
         let fp = vk::KhrVideoQueueFn::load(|name| unsafe {
-            mem::transmute(entry.get_instance_proc_addr(instance.handle(), name.as_ptr()))
+            mem::transmute(entry.get_instance_proc_addr(handle, name.as_ptr()))
         });
         Self { handle, fp }
     }
+
     /// <https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkGetPhysicalDeviceVideoCapabilitiesKHR.html>
     #[inline]
     pub unsafe fn get_physical_device_video_capabilities(
@@ -73,12 +74,13 @@ impl VideoQueue {
     #[inline]
     pub unsafe fn create_video_session(
         &self,
+        device: vk::Device,
         create_info: &vk::VideoSessionCreateInfoKHR,
         allocation_callbacks: Option<&vk::AllocationCallbacks>,
     ) -> VkResult<vk::VideoSessionKHR> {
         let mut video_session = mem::zeroed();
         (self.fp.create_video_session_khr)(
-            self.handle,
+            device,
             create_info,
             allocation_callbacks.as_raw_ptr(),
             &mut video_session,
@@ -90,11 +92,12 @@ impl VideoQueue {
     #[inline]
     pub unsafe fn destroy_video_session(
         &self,
+        device: vk::Device,
         video_session: vk::VideoSessionKHR,
         allocation_callbacks: Option<&vk::AllocationCallbacks>,
     ) {
         (self.fp.destroy_video_session_khr)(
-            self.handle,
+            device,
             video_session,
             allocation_callbacks.as_raw_ptr(),
         );
@@ -105,11 +108,12 @@ impl VideoQueue {
     #[inline]
     pub unsafe fn get_video_session_memory_requirements_len(
         &self,
+        device: vk::Device,
         video_session: vk::VideoSessionKHR,
     ) -> usize {
         let mut properties_count = 0;
         let _r = (self.fp.get_video_session_memory_requirements_khr)(
-            self.handle,
+            device,
             video_session,
             &mut properties_count,
             ptr::null_mut(),
@@ -121,12 +125,13 @@ impl VideoQueue {
     #[inline]
     pub unsafe fn get_video_session_memory_requirements(
         &self,
+        device: vk::Device,
         video_session: vk::VideoSessionKHR,
         out: &mut [vk::VideoSessionMemoryRequirementsKHR],
     ) -> VkResult<()> {
         let mut count = out.len() as u32;
         let result = (self.fp.get_video_session_memory_requirements_khr)(
-            self.handle,
+            device,
             video_session,
             &mut count,
             out.as_mut_ptr(),
@@ -140,12 +145,13 @@ impl VideoQueue {
     #[inline]
     pub unsafe fn bind_video_session_memory(
         &self,
+        device: vk::Device,
         video_session: vk::VideoSessionKHR,
         out: &mut [vk::BindVideoSessionMemoryInfoKHR],
     ) -> VkResult<()> {
         let count = out.len() as u32;
         let result = (self.fp.bind_video_session_memory_khr)(
-            self.handle,
+            device,
             video_session,
             count,
             out.as_mut_ptr(),
@@ -159,12 +165,13 @@ impl VideoQueue {
     #[inline]
     pub unsafe fn create_video_session_parameters(
         &self,
+        device: vk::Device,
         create_info: &vk::VideoSessionParametersCreateInfoKHR,
         allocation_callbacks: Option<&vk::AllocationCallbacks>,
     ) -> VkResult<vk::VideoSessionParametersKHR> {
         let mut video_session = mem::zeroed();
         (self.fp.create_video_session_parameters_khr)(
-            self.handle,
+            device,
             create_info,
             allocation_callbacks.as_raw_ptr(),
             &mut video_session,
@@ -176,11 +183,12 @@ impl VideoQueue {
     #[inline]
     pub unsafe fn update_video_session_parameters(
         &self,
+        device: vk::Device,
         video_session_parameters: vk::VideoSessionParametersKHR,
         memory_requirements: &vk::VideoSessionParametersUpdateInfoKHR,
     ) -> VkResult<()> {
         (self.fp.update_video_session_parameters_khr)(
-            self.handle,
+            device,
             video_session_parameters,
             memory_requirements,
         )
@@ -191,11 +199,12 @@ impl VideoQueue {
     #[inline]
     pub unsafe fn destroy_video_session_parameters(
         &self,
+        device: vk::Device,
         video_session_parameters: vk::VideoSessionParametersKHR,
         allocation_callbacks: Option<&vk::AllocationCallbacks>,
     ) {
         (self.fp.destroy_video_session_parameters_khr)(
-            self.handle,
+            device,
             video_session_parameters,
             allocation_callbacks.as_raw_ptr(),
         );
@@ -231,10 +240,7 @@ impl VideoQueue {
         (self.fp.cmd_control_video_coding_khr)(command_buffer, coding_control_info)
     }
 
-    #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::KhrVideoQueueFn::name()
-    }
+    pub const NAME: &'static CStr = vk::KhrVideoQueueFn::NAME;
 
     #[inline]
     pub fn fp(&self) -> &vk::KhrVideoQueueFn {
@@ -242,7 +248,7 @@ impl VideoQueue {
     }
 
     #[inline]
-    pub fn device(&self) -> vk::Device {
+    pub fn instance(&self) -> vk::Instance {
         self.handle
     }
 }

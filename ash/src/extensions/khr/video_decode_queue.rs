@@ -1,8 +1,8 @@
 use crate::vk;
-use crate::{Device, Entry, Instance};
+use crate::{Device, Instance};
 use std::ffi::CStr;
 use std::mem;
-
+/// <https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_KHR_video_decode_queue.html>
 #[derive(Clone)]
 pub struct VideoDecodeQueue {
     handle: vk::Device,
@@ -10,11 +10,10 @@ pub struct VideoDecodeQueue {
 }
 
 impl VideoDecodeQueue {
-    pub fn new(entry: &Entry, instance: &Instance, device: &Device) -> Self {
+    pub fn new(instance: &Instance, device: &Device) -> Self {
         let handle = device.handle();
         let fp = vk::KhrVideoDecodeQueueFn::load(|name| unsafe {
-            mem::transmute(entry.get_instance_proc_addr(instance.handle(), name.as_ptr()))
-            //mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
+            mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
         });
         Self { handle, fp }
     }
@@ -29,10 +28,7 @@ impl VideoDecodeQueue {
         (self.fp.cmd_decode_video_khr)(command_buffer, decode_info)
     }
 
-    #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::KhrVideoDecodeQueueFn::name()
-    }
+    pub const NAME: &'static CStr = vk::KhrVideoDecodeQueueFn::NAME;
 
     #[inline]
     pub fn fp(&self) -> &vk::KhrVideoDecodeQueueFn {

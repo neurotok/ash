@@ -5,16 +5,15 @@ use std::mem;
 
 #[derive(Clone)]
 pub struct VideoEncodeQueue {
-    handle: vk::Device,
+    handle: vk::Instance,
     fp: vk::KhrVideoEncodeQueueFn,
 }
 
 impl VideoEncodeQueue {
-    pub fn new(entry: &Entry, instance: &Instance, device: &Device) -> Self {
-        let handle = device.handle();
+    pub fn new(entry: &Entry, instance: &Instance) -> Self {
+        let handle = instance.handle();
         let fp = vk::KhrVideoEncodeQueueFn::load(|name| unsafe {
             mem::transmute(entry.get_instance_proc_addr(instance.handle(), name.as_ptr()))
-            //mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
         });
         Self { handle, fp }
     }
@@ -29,10 +28,7 @@ impl VideoEncodeQueue {
         (self.fp.cmd_encode_video_khr)(command_buffer, encode_info)
     }
 
-    #[inline]
-    pub const fn name() -> &'static CStr {
-        vk::KhrVideoEncodeQueueFn::name()
-    }
+    pub const NAME: &'static CStr = vk::KhrVideoEncodeQueueFn::NAME;
 
     #[inline]
     pub fn fp(&self) -> &vk::KhrVideoEncodeQueueFn {
@@ -40,7 +36,7 @@ impl VideoEncodeQueue {
     }
 
     #[inline]
-    pub fn device(&self) -> vk::Device {
+    pub fn instance(&self) -> vk::Instance {
         self.handle
     }
 }
