@@ -1,5 +1,5 @@
 use crate::vk;
-use crate::{Device, Entry, Instance};
+use crate::{Entry, Instance};
 use std::ffi::CStr;
 use std::mem;
 
