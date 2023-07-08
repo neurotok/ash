@@ -1,3 +1,5 @@
+#[cfg(doc)]
+use super::Entry;
 use crate::device::Device;
 use crate::prelude::*;
 use crate::vk;
@@ -13,7 +15,6 @@ pub struct Instance {
 
     pub(crate) instance_fn_1_0: vk::InstanceFnV1_0,
     pub(crate) instance_fn_1_1: vk::InstanceFnV1_1,
-    pub(crate) instance_fn_1_2: vk::InstanceFnV1_2,
     pub(crate) instance_fn_1_3: vk::InstanceFnV1_3,
 }
 
@@ -23,13 +24,27 @@ impl Instance {
             mem::transmute((static_fn.get_instance_proc_addr)(instance, name.as_ptr()))
         };
 
-        Self {
-            handle: instance,
+        Self::from_parts_1_3(
+            instance,
+            vk::InstanceFnV1_0::load(load_fn),
+            vk::InstanceFnV1_1::load(load_fn),
+            vk::InstanceFnV1_3::load(load_fn),
+        )
+    }
 
-            instance_fn_1_0: vk::InstanceFnV1_0::load(load_fn),
-            instance_fn_1_1: vk::InstanceFnV1_1::load(load_fn),
-            instance_fn_1_2: vk::InstanceFnV1_2::load(load_fn),
-            instance_fn_1_3: vk::InstanceFnV1_3::load(load_fn),
+    #[inline]
+    pub fn from_parts_1_3(
+        handle: vk::Instance,
+        instance_fn_1_0: vk::InstanceFnV1_0,
+        instance_fn_1_1: vk::InstanceFnV1_1,
+        instance_fn_1_3: vk::InstanceFnV1_3,
+    ) -> Self {
+        Self {
+            handle,
+
+            instance_fn_1_0,
+            instance_fn_1_1,
+            instance_fn_1_3,
         }
     }
 
@@ -40,7 +55,6 @@ impl Instance {
 }
 
 /// Vulkan core 1.3
-#[allow(non_camel_case_types)]
 impl Instance {
     #[inline]
     pub fn fp_v1_3(&self) -> &vk::InstanceFnV1_3 {
@@ -84,17 +98,7 @@ impl Instance {
     }
 }
 
-/// Vulkan core 1.2
-#[allow(non_camel_case_types)]
-impl Instance {
-    #[inline]
-    pub fn fp_v1_2(&self) -> &vk::InstanceFnV1_2 {
-        &self.instance_fn_1_2
-    }
-}
-
 /// Vulkan core 1.1
-#[allow(non_camel_case_types)]
 impl Instance {
     #[inline]
     pub fn fp_v1_1(&self) -> &vk::InstanceFnV1_1 {
@@ -325,7 +329,6 @@ impl Instance {
 }
 
 /// Vulkan core 1.0
-#[allow(non_camel_case_types)]
 impl Instance {
     #[inline]
     pub fn fp_v1_0(&self) -> &vk::InstanceFnV1_0 {
@@ -335,9 +338,17 @@ impl Instance {
     /// <https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/vkCreateDevice.html>
     ///
     /// # Safety
-    /// In order for the created [`Device`] to be valid for the duration of its
-    /// usage, the [`Instance`] this was called on must be dropped later than the
-    /// resulting [`Device`].
+    ///
+    /// There is a [parent/child relation] between [`Instance`] and the resulting [`Device`].  The
+    /// application must not [destroy][Instance::destroy_instance()] the parent [`Instance`] object
+    /// before first [destroying][Device::destroy_device()] the returned [`Device`] child object.
+    /// [`Device`] does _not_ implement [drop][drop()] semantics and can only be destroyed via
+    /// [`destroy_device()`][Device::destroy_device()].
+    ///
+    /// See the [`Entry::create_instance()`] documentation for more destruction ordering rules on
+    /// [`Instance`].
+    ///
+    /// [parent/child relation]: https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#fundamentals-objectmodel-lifetime
     #[inline]
     pub unsafe fn create_device(
         &self,

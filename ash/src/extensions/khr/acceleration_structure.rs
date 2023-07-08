@@ -5,6 +5,7 @@ use crate::{Device, Instance};
 use std::ffi::CStr;
 use std::mem;
 
+/// <https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_KHR_acceleration_structure.html>
 #[derive(Clone)]
 pub struct AccelerationStructure {
     handle: vk::Device,
@@ -18,19 +19,6 @@ impl AccelerationStructure {
             mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
         });
         Self { handle, fp }
-    }
-
-    #[inline]
-    pub unsafe fn get_properties(
-        instance: &Instance,
-        pdevice: vk::PhysicalDevice,
-    ) -> vk::PhysicalDeviceAccelerationStructurePropertiesKHR {
-        let mut props_rt = vk::PhysicalDeviceAccelerationStructurePropertiesKHR::default();
-        {
-            let mut props = vk::PhysicalDeviceProperties2::default().push_next(&mut props_rt);
-            instance.get_physical_device_properties2(pdevice, &mut props);
-        }
-        props_rt
     }
 
     /// <https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/vkCreateAccelerationStructureKHR.html>
@@ -271,7 +259,7 @@ impl AccelerationStructure {
         &self,
         version: &vk::AccelerationStructureVersionInfoKHR,
     ) -> vk::AccelerationStructureCompatibilityKHR {
-        let mut compatibility = vk::AccelerationStructureCompatibilityKHR::default();
+        let mut compatibility = mem::zeroed();
 
         (self.fp.get_device_acceleration_structure_compatibility_khr)(
             self.handle,
@@ -289,20 +277,17 @@ impl AccelerationStructure {
         build_type: vk::AccelerationStructureBuildTypeKHR,
         build_info: &vk::AccelerationStructureBuildGeometryInfoKHR,
         max_primitive_counts: &[u32],
-    ) -> vk::AccelerationStructureBuildSizesInfoKHR {
+        size_info: &mut vk::AccelerationStructureBuildSizesInfoKHR,
+    ) {
         assert_eq!(max_primitive_counts.len(), build_info.geometry_count as _);
-
-        let mut size_info = vk::AccelerationStructureBuildSizesInfoKHR::default();
 
         (self.fp.get_acceleration_structure_build_sizes_khr)(
             self.handle,
             build_type,
             build_info,
             max_primitive_counts.as_ptr(),
-            &mut size_info,
-        );
-
-        size_info
+            size_info,
+        )
     }
 
     pub const NAME: &'static CStr = vk::KhrAccelerationStructureFn::NAME;

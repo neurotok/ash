@@ -23,13 +23,30 @@ impl Device {
             mem::transmute((instance_fn.get_device_proc_addr)(device, name.as_ptr()))
         };
 
-        Self {
-            handle: device,
+        Self::from_parts_1_3(
+            device,
+            vk::DeviceFnV1_0::load(load_fn),
+            vk::DeviceFnV1_1::load(load_fn),
+            vk::DeviceFnV1_2::load(load_fn),
+            vk::DeviceFnV1_3::load(load_fn),
+        )
+    }
 
-            device_fn_1_0: vk::DeviceFnV1_0::load(load_fn),
-            device_fn_1_1: vk::DeviceFnV1_1::load(load_fn),
-            device_fn_1_2: vk::DeviceFnV1_2::load(load_fn),
-            device_fn_1_3: vk::DeviceFnV1_3::load(load_fn),
+    #[inline]
+    pub fn from_parts_1_3(
+        handle: vk::Device,
+        device_fn_1_0: vk::DeviceFnV1_0,
+        device_fn_1_1: vk::DeviceFnV1_1,
+        device_fn_1_2: vk::DeviceFnV1_2,
+        device_fn_1_3: vk::DeviceFnV1_3,
+    ) -> Self {
+        Self {
+            handle,
+
+            device_fn_1_0,
+            device_fn_1_1,
+            device_fn_1_2,
+            device_fn_1_3,
         }
     }
 
@@ -40,7 +57,6 @@ impl Device {
 }
 
 /// Vulkan core 1.3
-#[allow(non_camel_case_types)]
 impl Device {
     #[inline]
     pub fn fp_v1_3(&self) -> &vk::DeviceFnV1_3 {
@@ -531,7 +547,6 @@ impl Device {
 }
 
 /// Vulkan core 1.2
-#[allow(non_camel_case_types)]
 impl Device {
     #[inline]
     pub fn fp_v1_2(&self) -> &vk::DeviceFnV1_2 {
@@ -705,7 +720,6 @@ impl Device {
 }
 
 /// Vulkan core 1.1
-#[allow(non_camel_case_types)]
 impl Device {
     #[inline]
     pub fn fp_v1_1(&self) -> &vk::DeviceFnV1_1 {
@@ -854,6 +868,14 @@ impl Device {
         (self.device_fn_1_1.trim_command_pool)(self.handle(), command_pool, flags);
     }
 
+    /// <https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/vkGetDeviceQueue2.html>
+    #[inline]
+    pub unsafe fn get_device_queue2(&self, queue_info: &vk::DeviceQueueInfo2) -> vk::Queue {
+        let mut queue = mem::zeroed();
+        (self.device_fn_1_1.get_device_queue2)(self.handle(), queue_info, &mut queue);
+        queue
+    }
+
     /// <https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/vkCreateSamplerYcbcrConversion.html>
     #[inline]
     pub unsafe fn create_sampler_ycbcr_conversion(
@@ -944,7 +966,6 @@ impl Device {
 }
 
 /// Vulkan core 1.0
-#[allow(non_camel_case_types)]
 impl Device {
     #[inline]
     pub fn fp_v1_0(&self) -> &vk::DeviceFnV1_0 {

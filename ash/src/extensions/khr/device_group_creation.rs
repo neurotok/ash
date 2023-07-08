@@ -13,7 +13,7 @@ pub struct DeviceGroupCreation {
 }
 
 impl DeviceGroupCreation {
-    pub fn new(entry: Entry, instance: &Instance) -> Self {
+    pub fn new(entry: &Entry, instance: &Instance) -> Self {
         let handle = instance.handle();
         let fp = vk::KhrDeviceGroupCreationFn::load(|name| unsafe {
             mem::transmute(entry.get_instance_proc_addr(handle, name.as_ptr()))
@@ -57,7 +57,7 @@ impl DeviceGroupCreation {
     }
 
     #[inline]
-    pub fn device(&self) -> vk::Instance {
+    pub fn instance(&self) -> vk::Instance {
         self.handle
     }
 }
